@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | GivStack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="login-icon">🔐</span>
+      <h1>פאנל ניהול</h1>
+      <p>GivStack Admin</p>
+    </div>
+    <form id="login-form" onsubmit="doLogin(event)">
+      <div class="form-group">
+        <label>סיסמת ניהול</label>
+        <input type="password" id="login-password" placeholder="הכנס סיסמה" autofocus required />
+      </div>
+      <button type="submit" class="btn-primary full-width">כניסה</button>
+      <p class="login-error" id="login-error"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="admin-app" class="admin-app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2 id="sidebar-campaign-name">GivStack</h2>
+      <p>Admin Panel</p>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+        📊 סטטיסטיקות
+      </button>
+      <button class="nav-item" data-page="settings" onclick="showPage('settings')">
+        ⚙️ הגדרות קמפיין
+      </button>
+      <button class="nav-item" data-page="buttons" onclick="showPage('buttons')">
+        💰 כפתורי סכומים
+      </button>
+      <button class="nav-item" data-page="items" onclick="showPage('items')">
+        🏛️ פריטי הנצחה
+      </button>
+      <button class="nav-item" data-page="ambassadors" onclick="showPage('ambassadors')">
+        🤝 שגרירים
+      </button>
+      <button class="nav-item" data-page="manual" onclick="showPage('manual')">
+        ✏️ תרומה ידנית
+      </button>
+      <button class="nav-item" data-page="updates" onclick="showPage('updates')">
+        📢 עדכונות
+      </button>
+      <button class="nav-item" data-page="donations" onclick="showPage('donations')">
+        📋 תרומות
+      </button>
+      <button class="nav-item" data-page="reports" onclick="showPage('reports')">
+        📈 דוחות וייצוא
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank" class="btn-view-site">צפה באתר</a>
+      <button onclick="doLogout()" class="btn-logout">יציאה</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
+
+    <!-- MOBILE HEADER -->
+    <div class="mobile-header">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <span>GivStack Admin</span>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header"><h2>סטטיסטיקות</h2></div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-label">סך גויס</div><div class="stat-value" id="stat-raised">טוען...</div></div>
+        <div class="stat-card"><div class="stat-label">תורמים</div><div class="stat-value" id="stat-donors">-</div></div>
+        <div class="stat-card"><div class="stat-label">אחוז יעד</div><div class="stat-value" id="stat-pct">-</div></div>
+        <div class="stat-card"><div class="stat-label">יעד</div><div class="stat-value" id="stat-goal">-</div></div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="dash-section">
+          <h3>תרומות אחרונות</h3>
+          <div id="recent-donations" class="recent-list"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header"><h2>הגדרות קמפיין</h2></div>
+      <form id="settings-form" onsubmit="saveSettings(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>שם הקמפיין</label>
+            <input type="text" name="campaign_name" />
+          </div>
+          <div class="form-group">
+            <label>תת-כותרת</label>
+            <input type="text" name="subtitle" />
+          </div>
+          <div class="form-group full-col">
+            <label>טקסט באנר</label>
+            <textarea name="banner_text" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>יעד סכום (₪)</label>
+            <input type="number" name="goal" min="0" />
+          </div>
+          <div class="form-group">
+            <label>תאריך התחלה</label>
+            <input type="date" name="start_date" />
+          </div>
+          <div class="form-group">
+            <label>תאריך סיום</label>
+            <input type="date" name="end_date" />
+          </div>
+          <div class="form-group">
+            <label>טלפון ליצירת קשר</label>
+            <input type="tel" name="contact_phone" />
+          </div>
+          <div class="form-group">
+            <label>מייל ליצירת קשר</label>
+            <input type="email" name="contact_email" />
+          </div>
+          <div class="form-group">
+            <label>MOSAD ID (נדרים פלוס)</label>
+            <input type="text" name="mosad_id" />
+          </div>
+          <div class="form-group">
+            <label>API Valid (נדרים פלוס)</label>
+            <input type="text" name="api_valid" />
+          </div>
+          <div class="form-group full-col">
+            <label>לינק וידאו (YouTube / Vimeo)</label>
+            <input type="url" name="video_url" placeholder="https://www.youtube.com/watch?v=..." />
+          </div>
+          <div class="form-group full-col">
+            <label>טקסט מאצ'ינג / אתגר (ריק = לא מוצג)</label>
+            <input type="text" name="matching_text" placeholder='לדוגמה: "כל תרומה מוכפלת עד הלילה חצות!"' />
+          </div>
+          <div class="form-group">
+            <label>טלפון מנהל להתראות WhatsApp</label>
+            <input type="tel" name="admin_phone" placeholder="0501234567" />
+          </div>
+          <div class="form-group">
+            <label class="toggle-label">
+              <span>שלח תודה לתורם ב-WhatsApp</span>
+              <input type="checkbox" name="notify_donor" class="toggle-input" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="toggle-label">
+              <span>הקמפיין פעיל</span>
+              <input type="checkbox" name="is_active" class="toggle-input" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="toggle-label">
+              <span>הצג מד התקדמות</span>
+              <input type="checkbox" name="show_progress" class="toggle-input" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="toggle-label">
+              <span>הצג קיר תורמים</span>
+              <input type="checkbox" name="show_wall" class="toggle-input" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">שמור הגדרות</button>
+      </form>
+
+      <div class="card mt-20">
+        <h3 class="card-title">לוגו הקמפיין</h3>
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <img id="logo-preview" src="/images/logo.png" alt="לוגו נוכחי" style="height:64px;border-radius:10px;background:#f0ebf7;padding:6px 10px;object-fit:contain" onerror="this.style.display='none'" />
+          <div>
+            <input type="file" id="logo-file-input" accept="image/*" style="display:none" onchange="previewLogo(this)" />
+            <button class="btn-secondary" onclick="document.getElementById('logo-file-input').click()">בחר תמונה</button>
+            <button class="btn-primary" id="logo-upload-btn" onclick="uploadLogo()" style="display:none;margin-right:8px">העלה לוגו</button>
+          </div>
+        </div>
+        <p style="margin-top:10px;font-size:13px;color:#888">מומלץ: PNG שקוף עם רקע שקוף, גובה לפחות 100px</p>
+      </div>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="page" id="page-buttons">
+      <div class="page-header">
+        <h2>כפתורי סכומים</h2>
+        <button class="btn-primary" onclick="addButtonRow()">+ הוסף כפתור</button>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table" id="buttons-table">
+          <thead><tr><th>טקסט</th><th>סכום (₪)</th><th>סדר</th><th>פעיל</th><th>פעולות</th></tr></thead>
+          <tbody id="buttons-body"></tbody>
+        </table>
+      </div>
+      <button class="btn-primary mt-20" onclick="saveAllButtons()">שמור הכל</button>
+    </div>
+
+    <!-- ITEMS -->
+    <div class="page" id="page-items">
+      <div class="page-header">
+        <h2>פריטי הנצחה</h2>
+        <button class="btn-primary" onclick="addItemRow()">+ הוסף פריט</button>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table" id="items-table">
+          <thead><tr><th>שם הפריט</th><th>מחיר (₪)</th><th>כמות כוללת</th><th>נותרו</th><th>סדר</th><th>פעיל</th><th>פעולות</th></tr></thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AMBASSADORS -->
+    <div class="page" id="page-ambassadors">
+      <div class="page-header"><h2>שגרירים</h2></div>
+      <div class="card mb-20">
+        <h3 class="card-title">הוסף שגריר חדש</h3>
+        <form id="ambassador-form" onsubmit="addAmbassador(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>שם מלא *</label>
+              <input type="text" id="amb-name" required />
+            </div>
+            <div class="form-group">
+              <label>יעד אישי (₪) *</label>
+              <input type="number" id="amb-goal" min="0" required />
+            </div>
+            <div class="form-group">
+              <label>קוד ייחודי (ייווצר אוטומטית)</label>
+              <input type="text" id="amb-code" placeholder="השאר ריק לייצור אוטומטי" />
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">הוסף שגריר</button>
+        </form>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>שם</th><th>קוד</th><th>יעד</th><th>גויס</th><th>תורמים</th><th>פעיל</th><th>לינק</th><th>פעולות</th></tr></thead>
+          <tbody id="ambassadors-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MANUAL DONATION -->
+    <div class="page" id="page-manual">
+      <div class="page-header"><h2>הזנת תרומה ידנית</h2></div>
+      <div class="card">
+        <form id="manual-form" onsubmit="saveManualDonation(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>שם התורם *</label>
+              <input type="text" id="m-donor-name" required />
+            </div>
+            <div class="form-group">
+              <label>סכום (₪) *</label>
+              <input type="number" id="m-amount" min="1" required />
+            </div>
+            <div class="form-group">
+              <label>אמצעי תשלום *</label>
+              <select id="m-payment">
+                <option value="cash">מזומן</option>
+                <option value="bank">העברה בנקאית</option>
+                <option value="check">צ'ק</option>
+                <option value="other">אחר</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>פריט הנצחה</label>
+              <select id="m-item"></select>
+            </div>
+            <div class="form-group">
+              <label>תאריך התרומה</label>
+              <input type="date" id="m-date" />
+            </div>
+            <div class="form-group">
+              <label>שגריר משויך</label>
+              <select id="m-ambassador"></select>
+            </div>
+            <div class="form-group full-col">
+              <label>הערה חופשית</label>
+              <textarea id="m-comment" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label">
+                <span>הצג בקיר תורמים</span>
+                <input type="checkbox" id="m-show-wall" class="toggle-input" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">שמור תרומה</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- DONATIONS -->
+    <div class="page" id="page-donations">
+      <div class="page-header">
+        <h2>ניהול תרומות</h2>
+        <button class="btn-secondary" onclick="loadDonationsPage()">רענן</button>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>תורם</th>
+              <th>סכום</th>
+              <th>פריט</th>
+              <th>שגריר</th>
+              <th>הערה</th>
+              <th>תאריך</th>
+              <th>קיר</th>
+              <th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody id="donations-body"></tbody>
+        </table>
+      </div>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn-secondary" id="donations-load-more" onclick="loadMoreDonationsAdmin()" style="display:none">טען עוד</button>
+      </div>
+    </div>
+
+    <!-- UPDATES -->
+    <div class="page" id="page-updates">
+      <div class="page-header"><h2>עדכונות</h2></div>
+      <div class="card mb-20">
+        <h3 class="card-title">הוסף עדכון</h3>
+        <form id="update-form" onsubmit="addUpdate(event)">
+          <div class="form-group">
+            <label>כותרת</label>
+            <input type="text" id="upd-title" />
+          </div>
+          <div class="form-group">
+            <label>תוכן *</label>
+            <textarea id="upd-content" rows="4" required></textarea>
+          </div>
+          <div class="form-group">
+            <label>תאריך</label>
+            <input type="datetime-local" id="upd-date" />
+          </div>
+          <button type="submit" class="btn-primary">פרסם עדכון</button>
+        </form>
+      </div>
+      <div id="updates-admin-list"></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="page-header"><h2>דוחות וייצוא</h2></div>
+      <div class="stats-grid" id="reports-stats">
+        <div class="stat-card"><div class="stat-label">סך גויס (נדרים)</div><div class="stat-value" id="rep-nedarim">-</div></div>
+        <div class="stat-card"><div class="stat-label">סך גויס (ידני)</div><div class="stat-value" id="rep-manual">-</div></div>
+        <div class="stat-card"><div class="stat-label">סה"כ תרומות</div><div class="stat-value" id="rep-total">-</div></div>
+        <div class="stat-card"><div class="stat-label">שגרירים פעילים</div><div class="stat-value" id="rep-ambs">-</div></div>
+      </div>
+      <div class="export-section">
+        <h3>ייצוא CSV</h3>
+        <div class="export-buttons">
+          <a href="/api/export/donations" class="btn-export" target="_blank">📥 כל התרומות</a>
+          <a href="/api/export/items" class="btn-export" target="_blank">📥 פריטי הנצחה</a>
+          <a href="/api/export/ambassadors" class="btn-export" target="_blank">📥 שגרירים</a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- DONATION EDIT MODAL -->
+<div id="don-edit-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center" onclick="closeDonEdit()">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:min(480px,94vw);box-shadow:0 20px 60px rgba(0,0,0,0.3)" onclick="event.stopPropagation()">
+    <h3 style="margin-bottom:20px;font-size:18px;color:#2D0E55">עריכת תרומה</h3>
+    <input type="hidden" id="don-edit-id" />
+    <div class="form-grid">
+      <div class="form-group">
+        <label>שם תורם</label>
+        <input type="text" id="don-edit-name" />
+      </div>
+      <div class="form-group">
+        <label>סכום (₪)</label>
+        <input type="number" id="don-edit-amount" min="1" />
+      </div>
+      <div class="form-group full-col">
+        <label>הערה</label>
+        <input type="text" id="don-edit-comment" />
+      </div>
+    </div>
+    <label class="toggle-label" style="margin-bottom:20px;display:flex;gap:10px;align-items:center">
+      <span>הצג בקיר תורמים</span>
+      <input type="checkbox" id="don-edit-wall" class="toggle-input" />
+      <span class="toggle-slider"></span>
+    </label>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn-secondary" onclick="closeDonEdit()">ביטול</button>
+      <button class="btn-primary" onclick="saveDonEdit()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- AMBASSADOR EDIT MODAL -->
+<div id="amb-edit-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center" onclick="closeAmbEdit()">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:min(440px,94vw);box-shadow:0 20px 60px rgba(0,0,0,0.3)" onclick="event.stopPropagation()">
+    <h3 style="margin-bottom:20px;font-size:18px;color:#2D0E55">עריכת שגריר</h3>
+    <input type="hidden" id="amb-edit-id" />
+    <div class="form-grid">
+      <div class="form-group">
+        <label>שם מלא</label>
+        <input type="text" id="amb-edit-name" />
+      </div>
+      <div class="form-group">
+        <label>יעד אישי (₪)</label>
+        <input type="number" id="amb-edit-goal" min="0" />
+      </div>
+    </div>
+    <label class="toggle-label" style="margin-bottom:20px;display:flex;gap:10px;align-items:center">
+      <span>פעיל</span>
+      <input type="checkbox" id="amb-edit-active" class="toggle-input" />
+      <span class="toggle-slider"></span>
+    </label>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn-secondary" onclick="closeAmbEdit()">ביטול</button>
+      <button class="btn-primary" onclick="saveAmbEdit()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="admin-toast"></div>
+
+<script src="/admin/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  givstack:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SITE_URL=${SITE_URL}
+      - MOSAD_ID=${MOSAD_ID}
+      - API_VALID=${API_VALID}
+      - NEDARIM_WEBHOOK_IP=${NEDARIM_WEBHOOK_IP:-18.194.219.73}
+    volumes:
+      - ./data:/app/data
+      - ./public/images:/app/public/images
+    restart: unless-stopped

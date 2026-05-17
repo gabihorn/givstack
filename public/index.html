@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{OG_TITLE}}</title>
+  <meta property="og:title" content="{{OG_TITLE}}" />
+  <meta property="og:description" content="{{OG_DESC}}" />
+  <meta property="og:image" content="{{OG_IMAGE}}" />
+  <meta property="og:url" content="{{OG_URL}}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="he_IL" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{OG_TITLE}}" />
+  <meta name="twitter:description" content="{{OG_DESC}}" />
+  <meta name="twitter:image" content="{{OG_IMAGE}}" />
+  <link rel="icon" href="/images/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <div class="top-nav-logo-wrap">
+      <img src="/images/logo.png" alt="לוגו" class="top-nav-logo" onerror="this.parentElement.style.display='none'" />
+      <span class="top-nav-name" id="nav-campaign-name">GivStack</span>
+    </div>
+    <button class="top-nav-cta" onclick="openDonationPopup(0)">Donate</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="hero">
+  <div class="hero-pattern"></div>
+  <div class="hero-inner">
+    <div class="hero-logo-wrap">
+      <img src="/images/logo.png" alt="logo" class="hero-logo" onerror="this.parentElement.style.display='none'" />
+    </div>
+    <h1 class="hero-title" id="campaign-name">GivStack</h1>
+    <p class="hero-subtitle" id="campaign-subtitle"></p>
+    <p class="hero-text" id="campaign-banner"></p>
+    <div class="matching-badge" id="matching-badge" style="display:none">
+      <span class="matching-icon">⚡</span>
+      <span id="matching-text"></span>
+    </div>
+    <div class="hero-countdown" id="hero-countdown" style="display:none">
+      <div class="countdown-unit"><span class="countdown-num" id="cd-days">00</span><span class="countdown-label">ימים</span></div>
+      <div class="countdown-sep">:</div>
+      <div class="countdown-unit"><span class="countdown-num" id="cd-hours">00</span><span class="countdown-label">שעות</span></div>
+      <div class="countdown-sep">:</div>
+      <div class="countdown-unit"><span class="countdown-num" id="cd-mins">00</span><span class="countdown-label">דקות</span></div>
+      <div class="countdown-sep">:</div>
+      <div class="countdown-unit"><span class="countdown-num" id="cd-secs">00</span><span class="countdown-label">שניות</span></div>
+    </div>
+    <div class="hero-actions">
+      <button class="hero-cta" onclick="openDonationPopup(0)">לתרומה עכשיו</button>
+      <button class="hero-video-btn" id="hero-video-btn" onclick="openVideo()" style="display:none" aria-label="צפה בסרטון">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg>
+        צפה בסרטון
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- SHARE BAR -->
+<div class="share-bar" id="share-bar">
+  <span class="share-label">שתף את הקמפיין:</span>
+  <button class="share-btn share-whatsapp" onclick="shareWhatsApp()" aria-label="שתף ב-WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.122 1.522 5.857L.057 23.882l6.186-1.443A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.373l-.36-.214-3.724.869.94-3.614-.234-.372A9.818 9.818 0 012.182 12c0-5.423 4.395-9.818 9.818-9.818 5.423 0 9.818 4.395 9.818 9.818 0 5.423-4.395 9.818-9.818 9.818z"/></svg>
+    WhatsApp
+  </button>
+  <button class="share-btn share-facebook" onclick="shareFacebook()" aria-label="שתף בפייסבוק">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+    Facebook
+  </button>
+  <button class="share-btn share-copy" onclick="copyShareLink()" aria-label="העתק לינק">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+    העתק לינק
+  </button>
+</div>
+
+<!-- PROGRESS -->
+<section class="progress-section" id="progress-section">
+  <div class="container">
+    <div class="progress-card fade-in">
+      <div class="progress-header">
+        <div class="progress-stat">
+          <span class="progress-label">גויס עד כה</span>
+          <span class="progress-amount" id="total-raised">₪0</span>
+        </div>
+        <div class="progress-stat text-left">
+          <span class="progress-label">יעד הקמפיין</span>
+          <span class="progress-amount" id="total-goal">₪120,750</span>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-footer">
+        <span class="progress-pct" id="progress-pct">0%</span>
+        <span class="progress-donors" id="donor-count">0 תורמים</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AMOUNT BUTTONS -->
+<section class="donate-section">
+  <div class="container">
+    <h2 class="section-title">תרום עכשיו</h2>
+    <div class="amount-buttons" id="amount-buttons">
+      <!-- נטען דינמית -->
+    </div>
+    <div class="custom-amount-wrap" id="custom-amount-wrap" style="display:none">
+      <div class="custom-amount-inner">
+        <input type="number" id="custom-amount-input" placeholder="הכנס סכום" min="1" />
+        <span class="currency-symbol">₪</span>
+        <button class="btn-donate-custom" onclick="submitCustomAmount()">תרום</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ITEMS -->
+<section class="items-section" id="items-section">
+  <div class="container">
+    <h2 class="section-title">פריטים להנצחה</h2>
+    <div class="items-grid" id="items-grid">
+      <!-- נטען דינמית -->
+    </div>
+  </div>
+</section>
+
+<!-- WALL -->
+<section class="wall-section" id="wall-section">
+  <div class="container">
+    <h2 class="section-title">קיר תורמים</h2>
+    <div class="tabs">
+      <button class="tab active" data-tab="donors" onclick="switchTab('donors')">תורמים</button>
+      <button class="tab" data-tab="ambassadors" onclick="switchTab('ambassadors')">שגרירים</button>
+      <button class="tab" data-tab="updates" onclick="switchTab('updates')">עדכונות</button>
+    </div>
+
+    <!-- טאב תורמים -->
+    <div class="tab-content active" id="tab-donors">
+      <div class="donors-grid" id="donors-list"></div>
+      <div class="load-more-wrap">
+        <button class="btn-load-more" id="load-more-btn" onclick="loadMoreDonors()" style="display:none">טען עוד</button>
+      </div>
+    </div>
+
+    <!-- טאב שגרירים -->
+    <div class="tab-content" id="tab-ambassadors">
+      <div class="ambassadors-list" id="ambassadors-list"></div>
+    </div>
+
+    <!-- טאב עדכונות -->
+    <div class="tab-content" id="tab-updates">
+      <div class="updates-list" id="updates-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-logo-wrap">
+      <img src="/images/logo.png" alt="לוגו" class="footer-logo" onerror="this.style.display='none'" />
+    </div>
+    <div class="footer-info">
+      <p id="footer-contact"></p>
+      <p id="footer-org"></p>
+      <p class="footer-secure" id="footer-payment-note">Secured payment via Nedarim Plus</p>
+    </div>
+  </div>
+</footer>
+
+<!-- DONATION POPUP -->
+<div class="overlay" id="overlay" onclick="closePopup()"></div>
+<div class="popup" id="donation-popup" role="dialog" aria-modal="true" aria-label="תרומה">
+  <button class="popup-close" onclick="closePopup()" aria-label="סגור">✕</button>
+  <div class="popup-header">
+    <img src="/images/logo.png" alt="לוגו" class="popup-logo" onerror="this.style.display='none'" />
+    <h3 class="popup-title" id="popup-campaign-name"></h3>
+    <p class="popup-subtitle" id="popup-campaign-subtitle"></p>
+    <div class="popup-amount-badge" id="popup-amount-badge" style="display:none"></div>
+    <p class="popup-item-name" id="popup-item-name"></p>
+  </div>
+  <div class="popup-body">
+    <iframe
+      id="nedarim-iframe"
+      src="about:blank"
+      title="נדרים פלוס - תשלום מאובטח"
+      frameborder="0"
+      scrolling="yes"
+      allowpaymentrequest
+    ></iframe>
+  </div>
+</div>
+
+<!-- VIDEO MODAL -->
+<div class="overlay" id="video-overlay" onclick="closeVideo()"></div>
+<div class="video-modal" id="video-modal">
+  <button class="popup-close" onclick="closeVideo()" style="background:rgba(0,0,0,0.4);color:#fff">✕</button>
+  <iframe id="video-iframe" src="about:blank" frameborder="0" allowfullscreen allow="autoplay; fullscreen"></iframe>
+</div>
+
+<!-- LIVE NOTIFICATION -->
+<div class="live-notif" id="live-notif" style="display:none">
+  <div class="live-notif-avatar" id="live-notif-avatar"></div>
+  <div class="live-notif-text">
+    <div class="live-notif-name" id="live-notif-name"></div>
+    <div class="live-notif-amount" id="live-notif-amount"></div>
+  </div>
+</div>
+
+<!-- MOBILE FLOATING CTA -->
+<button class="mobile-float-cta" id="mobile-float-cta" onclick="openDonationPopup(0)" aria-label="תרום עכשיו">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+  תרום עכשיו
+</button>
+
+<!-- SVG defs for ring gradient -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C9A84C"/>
+      <stop offset="100%" stop-color="#E2C06A"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="toast" id="toast"></div>
+<canvas id="confetti-canvas" style="display:none"></canvas>
+
+<script src="/js/main.js"></script>
+</body>
+</html>
