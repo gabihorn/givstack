@@ -65,6 +65,6 @@ server {
     }
 
     location = /favicon.ico { access_log off; log_not_found off; }
-    access_log /var/log/nginx/meshalimim_access.log;
-    error_log /var/log/nginx/meshalimim_error.log;
+    access_log /var/log/nginx/givstack_access.log;
+    error_log /var/log/nginx/givstack_error.log;
 }
