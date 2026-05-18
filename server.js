@@ -73,6 +73,18 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 app.use('/api/webhook', webhookLimiter);
 
+// ===== PRE-DONATION MAP =====
+// Keyed by param2 (UUID); stores item_id, ambassador_code, notes, and extra donor fields
+// so the webhook can pick them up when Nedarim Plus fires
+const preDonations = new Map();
+// Clean up entries older than 2 hours
+setInterval(() => {
+  const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+  for (const [k, v] of preDonations) {
+    if (v.ts < cutoff) preDonations.delete(k);
+  }
+}, 15 * 60 * 1000);
+
 // ===== ADMIN AUTH =====
 const adminTokens = new Set();
 
@@ -150,13 +162,30 @@ app.get('/api/settings/public', (req, res) => {
       amount_buttons: buttons,
       mosad_id: process.env.MOSAD_ID || s.mosad_id || '',
       api_valid: process.env.API_VALID || s.api_valid || '',
-      end_date: s.end_date || '',
-      video_url: s.video_url || '',
+      end_date:      s.end_date      || '',
+      video_url:     s.video_url     || '',
       matching_text: s.matching_text || '',
+      bank_details:  s.bank_details  || '',
     });
   } catch (e) {
     res.status(500).json({ error: 'שגיאה בשרת' });
   }
+});
+
+// Pre-donation: client registers item_id + extra data before opening Nedarim Plus
+app.post('/api/pre-donation', (req, res) => {
+  const { param2, item_id, ambassador_code, notes, donor_taz, donor_email, donor_phone } = req.body || {};
+  if (!param2) return res.status(400).json({ error: 'param2 required' });
+  preDonations.set(param2, {
+    item_id:        item_id        || null,
+    ambassador_code: ambassador_code || '',
+    notes:          notes          || '',
+    donor_taz:      donor_taz      || '',
+    donor_email:    donor_email    || '',
+    donor_phone:    donor_phone    || '',
+    ts: Date.now(),
+  });
+  res.json({ ok: true });
 });
 
 // ===== WHATSAPP NOTIFICATIONS =====
@@ -206,62 +235,76 @@ app.post('/api/webhook', (req, res) => {
       return res.json({ status: 'ok', message: 'duplicate' });
     }
 
-    // חיפוש פריט לפי Comment
-    let itemId = null;
+    // Look up pre-donation data (registered before Nedarim Plus was opened)
+    const pre = param2 ? (preDonations.get(param2) || {}) : {};
+    if (param2) preDonations.delete(param2); // consume it
+
+    // Donor fields: Nedarim Plus webhook data takes priority (user may have edited)
+    const donorName  = data.FullName  || data.fullName  || null;
+    const donorPhone = data.Phone     || data.phone     || data.MobilePhone || pre.donor_phone || '';
+    const donorEmail = data.Email     || data.mail      || data.Mail        || pre.donor_email || '';
+    const donorTaz   = data.Taz       || data.taz       || pre.donor_taz   || '';
+
+    // Dedication / comment
     const comment = data.Comment || data.comment || '';
-    if (comment) {
+
+    // Item: prefer pre-donation map, fall back to comment-matching
+    let itemId = pre.item_id || null;
+    if (!itemId && comment) {
       const items = db.getItems();
       const matched = items.find(i => i.name && comment.includes(i.name));
-      if (matched) {
-        itemId = matched.id;
-        db.decrementItem(itemId);
-      }
+      if (matched) itemId = matched.id;
     }
+    if (itemId) db.decrementItem(itemId);
 
-    // חיפוש שגריר לפי Param1
+    // Ambassador: prefer pre-donation map param, fall back to Param1
     let ambassadorId = null;
-    const param1 = data.Param1 || data.param1 || '';
-    if (param1) {
-      const amb = db.getAmbassadorByCode(param1);
+    const ambCode = pre.ambassador_code || data.Param1 || data.param1 || '';
+    if (ambCode) {
+      const amb = db.getAmbassadorByCode(ambCode);
       if (amb) ambassadorId = amb.id;
     }
 
-    // קביעת שיטת תשלום
+    // Payment method
     let paymentMethod = 'credit';
     const payType = (data.PaymentType || data.paymentType || '').toLowerCase();
-    if (payType.includes('bit')) paymentMethod = 'bit';
+    if (payType.includes('bit'))  paymentMethod = 'bit';
     else if (payType.includes('hok') || payType.includes('חוק')) paymentMethod = 'hok';
 
-    const donorName = data.FullName || data.fullName || 'אנונימי';
-    const donorPhone = data.Phone || data.phone || data.MobilePhone || '';
-
     db.insertDonation({
-      source: 'nedarim',
-      payment_method: paymentMethod,
-      donor_name: donorName !== 'אנונימי' ? donorName : null,
+      source:          'nedarim',
+      payment_method:  paymentMethod,
+      donor_name:      donorName,
+      donor_phone:     donorPhone || null,
+      donor_email:     donorEmail || null,
+      donor_taz:       donorTaz   || null,
       amount,
-      currency: parseInt(data.Currency || '1', 10),
-      comment: comment || null,
-      item_id: itemId,
-      ambassador_id: ambassadorId,
-      transaction_id: data.TransactionId || data.transactionId || null,
-      param2: param2 || null,
-      show_in_wall: 1,
-      raw_webhook: raw,
+      currency:        parseInt(data.Currency || '1', 10),
+      comment:         comment   || null,
+      notes:           pre.notes || null,
+      item_id:         itemId,
+      ambassador_id:   ambassadorId,
+      transaction_id:  data.TransactionId || data.transactionId || null,
+      param2:          param2 || null,
+      show_in_wall:    1,
+      raw_webhook:     raw,
     });
 
     // WhatsApp notifications (non-blocking)
     const s = db.getAllSettings();
-    const adminPhone = s.admin_phone || '';
+    const adminPhone   = s.admin_phone || '';
     const campaignName = s.campaign_name || 'GivStack';
     const formattedAmount = `₪${Number(amount).toLocaleString('he-IL')}`;
+    const displayName  = donorName || 'אנונימי';
 
     if (adminPhone) {
-      const adminMsg = `💰 תרומה חדשה!\n👤 ${donorName}\n💵 ${formattedAmount}\n📌 ${comment || 'ללא פריט'}\n🏁 קמפיין: ${campaignName}`;
+      const itemLine = itemId ? `\n🏷️ פריט: ${db.getItem(itemId)?.name || ''}` : '';
+      const dedLine  = comment ? `\n✦ הקדשה: ${comment}` : '';
+      const adminMsg = `💰 תרומה חדשה!\n👤 ${displayName}\n📞 ${donorPhone || '—'}\n💵 ${formattedAmount}${itemLine}${dedLine}\n🏁 ${campaignName}`;
       sendWhatsApp(adminPhone, adminMsg);
     }
     if (s.notify_donor === '1' && donorPhone) {
-      const donorMsg = `שלום ${donorName} 🙏\nתרומתך בסך ${formattedAmount} לקמפיין "${campaignName}" התקבלה בהצלחה!\nתודה רבה על תמיכתך!`;
+      const donorMsg = `שלום ${displayName} 🙏\nתרומתך בסך ${formattedAmount} לקמפיין "${campaignName}" התקבלה בהצלחה!\nתודה רבה על תמיכתך!`;
       sendWhatsApp(donorPhone, donorMsg);
     }
 

@@ -53,26 +53,16 @@ async function loadSettings() {
 
 function applySettings(s) {
   setText('campaign-name', s.campaign_name);
-  setText('nav-campaign-name', s.campaign_name);
   setText('campaign-subtitle', s.subtitle);
   setText('campaign-banner', s.banner_text);
+  setText('popup-campaign-name', s.campaign_name);
+  setText('popup-campaign-sub', s.subtitle);
   document.title = s.campaign_name || 'GivStack';
 
-  // Popup header
-  setText('popup-campaign-name', s.campaign_name);
-  setText('popup-campaign-subtitle', s.subtitle);
-
-  // Footer
   const contact = [];
-  if (s.contact_phone) contact.push(`Tel: ${s.contact_phone}`);
+  if (s.contact_phone) contact.push(`טלפון: ${s.contact_phone}`);
   if (s.contact_email) contact.push(s.contact_email);
   setHTML('footer-contact', contact.join(' | '));
-  const orgEl = document.getElementById('footer-org');
-  if (orgEl) orgEl.textContent = s.campaign_name ? `© ${s.campaign_name}` : '';
-
-  // Payment note (hide if no payment provider configured)
-  const payNote = document.getElementById('footer-payment-note');
-  if (payNote) payNote.style.display = (s.mosad_id) ? '' : 'none';
 
   if (s.amount_buttons && s.amount_buttons.length) renderAmountButtons(s.amount_buttons);
 
@@ -338,7 +328,7 @@ function renderDonors(donors, reset) {
       <div class="donor-info">
         <div class="donor-name">${esc(name)}</div>
         <div class="donor-amount">${formatMoney(d.amount)}</div>
-        ${d.comment ? `<div class="donor-comment">${esc(d.comment)}</div>` : ''}
+        ${d.comment ? `<div class="donor-dedication">${esc(d.comment)}</div>` : ''}
       </div>
       <div class="donor-time">${d.time_ago || ''}</div>
     `;
@@ -423,61 +413,245 @@ function switchTab(tabName) {
   });
 }
 
-// ===== DONATION POPUP =====
+// ===== DONATION POPUP (Two-step) =====
+
 function openDonationPopup(amount, itemName = '', ambassadorCode = '') {
   state.selectedAmount = amount;
   if (!itemName) itemName = state.selectedItemName || '';
   const ambCode = ambassadorCode || state.ambassadorCode || '';
 
+  // Pre-fill amount
+  const amountInput = document.getElementById('d-amount');
+  if (amountInput) amountInput.value = amount || '';
+
+  // Item badge
   setText('popup-item-name', itemName ? `פריט להנצחה: ${itemName}` : '');
   const badge = document.getElementById('popup-amount-badge');
-  if (badge && amount) {
-    badge.textContent = formatMoney(amount);
-    badge.style.display = 'inline-block';
-  } else if (badge) {
-    badge.style.display = 'none';
+  if (badge) {
+    if (amount) { badge.textContent = formatMoney(amount); badge.style.display = 'inline-block'; }
+    else badge.style.display = 'none';
   }
 
-  const iframe = document.getElementById('nedarim-iframe');
-  const mosadId = state.settings?.mosad_id || '';
-  const apiValid = state.settings?.api_valid || '';
-  const callbackUrl = window.location.origin + '/api/webhook';
-  const param2 = generateUUID();
-  const comment = itemName || '';
-
-  // בניית URL לנדרים פלוס
-  const params = new URLSearchParams({
-    Mosad: mosadId,
-    ApiValid: apiValid,
-    Amount: amount || '',
-    Groupe: state.settings?.campaign_name || 'GivStack',
-    Comment: comment,
-    Param1: ambCode,
-    Param2: param2,
-    Currency: '1',
-    PaymentType: 'Ragil',
-    CallBack: callbackUrl,
-    SiteTitle: state.settings?.campaign_name || 'GivStack',
-    SiteColor: '3D1660',
-  });
-
-  iframe.src = `https://www.matara.pro/nedarimplus/iframe/?${params.toString()}`;
+  // Reset form to clean state, show step 1
+  resetDonorForm();
+  showStep(1);
 
   document.getElementById('overlay').classList.add('active');
   document.getElementById('donation-popup').classList.add('active');
   document.body.style.overflow = 'hidden';
+
+  // Focus first field
+  setTimeout(() => { const n = document.getElementById('d-name'); if (n) n.focus(); }, 80);
+}
+
+function showStep(n) {
+  const s1 = document.getElementById('popup-step-1');
+  const s2 = document.getElementById('popup-step-2');
+  const i1 = document.getElementById('step-ind-1');
+  const i2 = document.getElementById('step-ind-2');
+  if (!s1 || !s2) return;
+
+  s1.style.display = n === 1 ? 'flex' : 'none';
+  s2.style.display = n === 2 ? 'flex' : 'none';
+
+  if (i1) { i1.classList.toggle('active', n === 1); i1.classList.toggle('done', n > 1); }
+  if (i2) { i2.classList.toggle('active', n === 2); i2.classList.remove('done'); }
+}
+
+function resetDonorForm() {
+  const form = document.getElementById('donor-form');
+  if (form) form.reset();
+  // Re-select credit radio + visual
+  document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
+  const creditLabel = document.querySelector('.payment-method input[value="credit"]')?.closest('.payment-method');
+  if (creditLabel) creditLabel.classList.add('selected');
+  // Clear errors
+  document.querySelectorAll('.form-input.error').forEach(el => el.classList.remove('error'));
+}
+
+function selectPaymentMethod(radio) {
+  document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
+  radio.closest('.payment-method').classList.add('selected');
+}
+
+async function submitDonorForm(e) {
+  e.preventDefault();
+
+  const name       = (document.getElementById('d-name')?.value || '').trim();
+  const phone      = (document.getElementById('d-phone')?.value || '').trim();
+  const taz        = (document.getElementById('d-taz')?.value || '').trim();
+  const email      = (document.getElementById('d-email')?.value || '').trim();
+  const amount     = parseInt(document.getElementById('d-amount')?.value || '0', 10);
+  const dedication = (document.getElementById('d-dedication')?.value || '').trim();
+  const notes      = (document.getElementById('d-notes')?.value || '').trim();
+  const payment    = document.querySelector('input[name="d-payment"]:checked')?.value || 'credit';
+
+  // Validate required
+  let valid = true;
+  const mark = (id, ok) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('error', !ok);
+    if (!ok) valid = false;
+  };
+  mark('d-name',   !!name);
+  mark('d-phone',  !!phone);
+  mark('d-amount', amount >= 1);
+
+  if (!valid) { showToast('יש למלא את השדות המסומנים', 'error'); return; }
+
+  // Disable button while processing
+  const btn = document.getElementById('btn-donate-submit');
+  const btnText = document.getElementById('btn-submit-text');
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'מעבד...';
+
+  // Update badge with confirmed amount
+  const badge = document.getElementById('popup-amount-badge');
+  if (badge) { badge.textContent = formatMoney(amount); badge.style.display = 'inline-block'; }
+
+  // Handle bank / cash — show info box, no Nedarim Plus
+  if (payment === 'bank' || payment === 'cash') {
+    showBankInfo(name, amount, payment);
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = 'המשך לתשלום';
+    return;
+  }
+
+  // Register pre-donation on server (for item_id + notes tracking)
+  const param2 = generateUUID();
+  try {
+    await fetch('/api/pre-donation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        param2,
+        item_id:         state.selectedItemId || null,
+        ambassador_code: state.ambassadorCode || '',
+        notes:           notes || '',
+        donor_taz:       taz || '',
+        donor_email:     email || '',
+        donor_phone:     phone || '',
+      }),
+    });
+  } catch (_) { /* non-critical */ }
+
+  // Build Nedarim Plus URL with pre-filled donor data
+  const mosadId   = state.settings?.mosad_id || '';
+  const apiValid  = state.settings?.api_valid || '';
+  const callbackUrl = window.location.origin + '/api/webhook';
+  const campName  = state.settings?.campaign_name || 'GivStack';
+  const itemName  = state.selectedItemName || '';
+  const ambCode   = state.ambassadorCode || '';
+
+  // Split full name into first/last for Nedarim Plus fields
+  const nameParts = name.split(/\s+/);
+  const firstName = nameParts[0] || name;
+  const lastName  = nameParts.slice(1).join(' ') || '';
+
+  // Comment = dedication (shows on wall); if no dedication, use item name as fallback
+  const nedarimComment = dedication || (itemName ? itemName : '');
+
+  const params = new URLSearchParams({
+    Mosad:       mosadId,
+    ApiValid:    apiValid,
+    Amount:      amount,
+    Groupe:      campName,
+    Comment:     nedarimComment,
+    Param1:      ambCode,
+    Param2:      param2,
+    Currency:    '1',
+    PaymentType: payment === 'bit' ? 'Bit' : 'Ragil',
+    CallBack:    callbackUrl,
+    SiteTitle:   campName,
+    SiteColor:   '3D1660',
+    // Pre-fill donor info in Nedarim Plus form
+    FirstName:   firstName,
+    LastName:    lastName,
+    Phone:       phone,
+    Mail:        email,
+    Taz:         taz,
+  });
+
+  document.getElementById('nedarim-iframe').src =
+    `https://www.matara.pro/nedarimplus/iframe/?${params.toString()}`;
+
+  // Hide bank box, show iframe
+  const bankBox = document.getElementById('bank-info-box');
+  const iframe  = document.getElementById('nedarim-iframe');
+  if (bankBox) bankBox.style.display = 'none';
+  if (iframe)  iframe.style.display  = 'block';
+
+  showStep(2);
+
+  if (btn) btn.disabled = false;
+  if (btnText) btnText.textContent = 'המשך לתשלום';
+}
+
+function showBankInfo(name, amount, method) {
+  const isCash    = method === 'cash';
+  const s         = state.settings || {};
+  const phone     = s.contact_phone || '';
+  const bankDets  = s.bank_details  || '';
+
+  // Hide iframe, show info box
+  const iframe  = document.getElementById('nedarim-iframe');
+  const bankBox = document.getElementById('bank-info-box');
+  if (iframe)  iframe.style.display  = 'none';
+  if (bankBox) bankBox.style.display = 'flex';
+
+  setText('bank-info-icon',  isCash ? '💵' : '🏦');
+  setText('bank-info-title', isCash ? 'תשלום במזומן' : 'תשלום בהעברה בנקאית');
+
+  const sub = `${name}, בקשת תרומה של ${formatMoney(amount)} התקבלה!\nצרו קשר עמנו לאישור ותיאום התשלום:`;
+  setText('bank-info-sub', sub);
+
+  const detailsEl = document.getElementById('bank-info-details');
+  if (detailsEl) {
+    if (bankDets && !isCash) {
+      detailsEl.textContent = bankDets;
+      detailsEl.style.display = 'block';
+    } else {
+      detailsEl.style.display = 'none';
+    }
+  }
+
+  const waBtn = document.getElementById('btn-whatsapp-contact');
+  if (waBtn && phone) {
+    const cleaned = phone.replace(/\D/g, '');
+    const waNum   = cleaned.startsWith('972') ? cleaned : `972${cleaned.replace(/^0/, '')}`;
+    const msg     = encodeURIComponent(`שלום, שמי ${name} ואני מעוניין/ת לתרום ${formatMoney(amount)} לקמפיין ${state.settings?.campaign_name || ''}`);
+    waBtn.href    = `https://api.whatsapp.com/send?phone=${waNum}&text=${msg}`;
+    waBtn.style.display = 'inline-flex';
+  } else if (waBtn) {
+    waBtn.style.display = 'none';
+  }
+
+  showStep(2);
+}
+
+function backToStep1() {
+  document.getElementById('nedarim-iframe').src = 'about:blank';
+  const bankBox = document.getElementById('bank-info-box');
+  const iframe  = document.getElementById('nedarim-iframe');
+  if (bankBox) bankBox.style.display = 'none';
+  if (iframe)  iframe.style.display  = 'block';
+  showStep(1);
 }
 
 function closePopup() {
   document.getElementById('overlay').classList.remove('active');
   document.getElementById('donation-popup').classList.remove('active');
   document.body.style.overflow = '';
-  state.selectedItemId = null;
+  state.selectedItemId   = null;
   state.selectedItemName = '';
 
-  const iframe = document.getElementById('nedarim-iframe');
-  iframe.src = 'about:blank';
+  document.getElementById('nedarim-iframe').src = 'about:blank';
+  const bankBox = document.getElementById('bank-info-box');
+  const iframe  = document.getElementById('nedarim-iframe');
+  if (bankBox) bankBox.style.display = 'none';
+  if (iframe)  iframe.style.display  = 'block';
 
+  showStep(1);
   document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
   document.getElementById('custom-amount-wrap').style.display = 'none';
 }
@@ -542,7 +716,7 @@ window.addEventListener('message', (e) => {
 // ===== SHARE =====
 function shareWhatsApp() {
   const url = window.location.href.split('?')[0];
-  const text = `${state.settings.campaign_name || 'GivStack'} - ${state.settings.subtitle || ''}\nDonate now: ${url}`;
+  const text = `${state.settings.campaign_name || 'GivStack'} - ${state.settings.subtitle || ''}\nתרמו עכשיו: ${url}`;
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
 }
 

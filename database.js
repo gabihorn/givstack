@@ -78,6 +78,15 @@ function initDb() {
     );
   `);
 
+  // Migrations: add new columns to existing DBs without breaking them
+  const tryAdd = (table, col, type) => {
+    try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`); } catch (_) {}
+  };
+  tryAdd('donations', 'donor_phone', 'TEXT');
+  tryAdd('donations', 'donor_email', 'TEXT');
+  tryAdd('donations', 'donor_taz',   'TEXT');
+  tryAdd('donations', 'notes',       'TEXT');
+
   seedData(db);
 }
 
@@ -85,20 +94,21 @@ function seedData(db) {
   // Default settings — all configurable via admin panel after setup
   const defaultSettings = {
     campaign_name: 'My Campaign',
-    subtitle: '',
-    banner_text: '',
-    goal: '10000',
+    subtitle:      '',
+    banner_text:   '',
+    goal:          '10000',
     contact_phone: '',
     contact_email: '',
-    is_active: '1',
+    is_active:     '1',
     show_progress: '1',
-    show_wall: '1',
-    start_date: '',
-    end_date: '',
-    video_url: '',
+    show_wall:     '1',
+    start_date:    '',
+    end_date:      '',
+    video_url:     '',
     matching_text: '',
-    admin_phone: '',
-    notify_donor: '0',
+    admin_phone:   '',
+    notify_donor:  '0',
+    bank_details:  '',
   };
 
   const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
@@ -111,11 +121,11 @@ function seedData(db) {
   if (buttonCount.cnt === 0) {
     const insertButton = db.prepare('INSERT INTO amount_buttons (label, amount, sort_order, active) VALUES (?, ?, ?, 1)');
     const buttons = [
-      ['$18', 18, 1],
-      ['$36', 36, 2],
-      ['$54', 54, 3],
-      ['$100', 100, 4],
-      ['Custom', 0, 5],
+      ['$18',    18,  1],
+      ['$36',    36,  2],
+      ['$54',    54,  3],
+      ['$100',  100,  4],
+      ['Custom',  0,  5],
     ];
     for (const [label, amount, sort_order] of buttons) {
       insertButton.run(label, amount, sort_order);
@@ -152,9 +162,11 @@ function setSettings(obj) {
 
 // ===== BUTTONS =====
 function getButtons(activeOnly = false) {
+  // Sort: specific amounts ascending, custom/free (amount=0) buttons last
+  const order = 'ORDER BY CASE WHEN amount = 0 THEN 999999 ELSE amount END ASC';
   const sql = activeOnly
-    ? 'SELECT * FROM amount_buttons WHERE active = 1 ORDER BY sort_order'
-    : 'SELECT * FROM amount_buttons ORDER BY sort_order';
+    ? `SELECT * FROM amount_buttons WHERE active = 1 ${order}`
+    : `SELECT * FROM amount_buttons ${order}`;
   return getDb().prepare(sql).all();
 }
 
@@ -307,24 +319,29 @@ function isDuplicateWebhook(param2) {
 function insertDonation(data) {
   const info = getDb().prepare(`
     INSERT INTO donations
-      (source, payment_method, donor_name, amount, currency, comment,
+      (source, payment_method, donor_name, donor_phone, donor_email, donor_taz,
+       amount, currency, comment, notes,
        item_id, ambassador_id, transaction_id, param2, show_in_wall,
        donation_date, raw_webhook)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    data.source ?? 'nedarim',
+    data.source         ?? 'nedarim',
     data.payment_method ?? null,
-    data.donor_name ?? null,
+    data.donor_name     ?? null,
+    data.donor_phone    ?? null,
+    data.donor_email    ?? null,
+    data.donor_taz      ?? null,
     data.amount,
-    data.currency ?? 1,
-    data.comment ?? null,
-    data.item_id ?? null,
-    data.ambassador_id ?? null,
+    data.currency       ?? 1,
+    data.comment        ?? null,
+    data.notes          ?? null,
+    data.item_id        ?? null,
+    data.ambassador_id  ?? null,
     data.transaction_id ?? null,
-    data.param2 ?? null,
-    data.show_in_wall ?? 1,
-    data.donation_date ?? new Date().toISOString(),
-    data.raw_webhook ?? null
+    data.param2         ?? null,
+    data.show_in_wall   ?? 1,
+    data.donation_date  ?? new Date().toISOString(),
+    data.raw_webhook    ?? null
   );
   return info.lastInsertRowid;
 }

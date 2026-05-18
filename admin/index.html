@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin | GivStack</title>
+  <title>ניהול | משלימים.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
@@ -17,7 +17,7 @@
     <div class="login-logo">
       <span class="login-icon">🔐</span>
       <h1>פאנל ניהול</h1>
-      <p>GivStack Admin</p>
+      <p>קמפיין משלימים.</p>
     </div>
     <form id="login-form" onsubmit="doLogin(event)">
       <div class="form-group">
@@ -36,8 +36,8 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h2 id="sidebar-campaign-name">GivStack</h2>
-      <p>Admin Panel</p>
+      <h2>משלימים.</h2>
+      <p>פאנל ניהול</p>
     </div>
     <nav class="sidebar-nav">
       <button class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
@@ -80,7 +80,7 @@
     <!-- MOBILE HEADER -->
     <div class="mobile-header">
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
-      <span>GivStack Admin</span>
+      <span>פאנל ניהול - משלימים.</span>
     </div>
 
     <!-- DASHBOARD -->
@@ -163,6 +163,10 @@
               <input type="checkbox" name="notify_donor" class="toggle-input" />
               <span class="toggle-slider"></span>
             </label>
+          </div>
+          <div class="form-group full-col">
+            <label>פרטי חשבון בנק (מוצג בפופאפ לתרומה בהעברה בנקאית)</label>
+            <textarea name="bank_details" rows="3" placeholder="בנק: לאומי&#10;סניף: 123&#10;חשבון: 456789&#10;על שם: ..." style="resize:vertical"></textarea>
           </div>
           <div class="form-group">
             <label class="toggle-label">

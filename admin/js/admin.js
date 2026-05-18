@@ -213,8 +213,12 @@ function renderButtonsTable() {
 }
 
 function addButtonRow() {
-  buttonsData.push({ id: null, label: '₪', amount: 0, sort_order: buttonsData.length + 1, active: 1 });
+  buttonsData.push({ id: null, label: '', amount: '', sort_order: buttonsData.length + 1, active: 1 });
   renderButtonsTable();
+  // Focus the new label input
+  const rows = document.querySelectorAll('#buttons-body tr');
+  const lastRow = rows[rows.length - 1];
+  if (lastRow) lastRow.querySelector('[data-field="label"]').focus();
 }
 
 async function saveAllButtons() {
@@ -223,8 +227,14 @@ async function saveAllButtons() {
 
   rows.forEach((row, i) => {
     const id = parseInt(row.dataset.id) || null;
-    const label = row.querySelector('[data-field="label"]').value;
-    const amount = parseInt(row.querySelector('[data-field="amount"]').value) || 0;
+    const label = row.querySelector('[data-field="label"]').value.trim();
+    const rawAmount = row.querySelector('[data-field="amount"]').value;
+    // Parse amount; if empty/invalid and label contains a number, extract it
+    let amount = parseInt(rawAmount);
+    if (isNaN(amount) || (amount === 0 && rawAmount === '')) {
+      const extracted = label.replace(/[^\d]/g, '');
+      amount = extracted ? parseInt(extracted) : 0;
+    }
     const sort_order = parseInt(row.querySelector('[data-field="sort_order"]').value) || i;
     const active = row.querySelector('[data-field="active"]').checked ? 1 : 0;
 
